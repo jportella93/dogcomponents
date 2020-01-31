@@ -1,0 +1,22 @@
+{
+  "name": "Web Dogponents demo",
+  "short_name": "Web dogponents",
+  "icons": [
+    {
+      "src": "/icons/dog.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/dog.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "theme_color": "#f37f21",
+  "background_color": "#f37f21",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/index.html"
+}
