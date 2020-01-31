@@ -6,9 +6,9 @@ async function getDogBreeds(number) {
 }
 
 async function getDogPicOfBreed(breed) {
-  const data = await fetch(`https://dog.ceo/api/breed/${breed}/images/random`)
+  const data = await fetch(`https://dog.ceo/api/breed/${breed}/images`)
   const parsedData = await data.json()
-  return parsedData.message
+  return parsedData.message[0]
 }
 
 export async function getDogCollection(number) {

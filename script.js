@@ -1,5 +1,3 @@
-import './app-banner.js';
-import './dog-card.js';
 import { getDogCollection } from './dogApi.js';
 
 async function registerSW() {
@@ -14,8 +12,8 @@ async function registerSW() {
 
 function renderDogs(dogCollection) {
   Object.values(dogCollection).forEach(dogData => {
-    const dogCard = document.createElement('dog-card')
-    dogCard.data = dogData;
+    const dogCard = document.createElement('h2')
+    dogCard.textContent = dogData.breed
     const dogsWrapper = document.querySelector('#dogsWrapper');
     dogsWrapper.appendChild(dogCard)
   });
