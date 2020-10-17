@@ -1,34 +1,54 @@
 class DogCard extends HTMLElement {
-
   constructor() {
     super();
-    this.attachShadow({mode: 'open'})
-    const template = document.querySelector('template#dog-card')
-    this.shadowRoot.appendChild(template.content.cloneNode(true))
-  }
+    // Attach shadow DOM
+    this.attachShadow({mode: 'open'});
 
-  set data(data) {
-    this.shadowRoot.innerHTML = `
-    <style>
-      img {
-        width: 300px;
-      }
+    // Get default content from template in our index.html
+    const template = document.querySelector('#dog-card-content')
+
+    // Append template content to our shadow DOM root.
+    // Clone the template because we want to use it several times
+    this.shadowRoot.appendChild(template.content.cloneNode(true))
+
+    // Add component style
+    const style = document.createElement('style');
+    style.innerHTML = `
       div {
         width: 300px;
-        margin: 60px auto;
+        margin: 20px 10px 60px;
+        display: inline-block;
+        padding: 5px 20px 20px;
+        background: white;
+
+        /* box shadow from https://www.cssmatic.com/box-shadow */
+        box-shadow: 2px 10px 20px 2px rgba(0,0,0,0.20);
+      }
+      div, img {
+        border-radius: 4px;
+      }
+      img {
+        max-width: 280px;
       }
       h2 {
-        text-align: left;
-        color: peru;
+        color: silver;
       }
-    </style>
-
-    <div>
-      <h2>${data.breed}</h2>
-      <img src="${data.picture}" alt="${data.breed}" />
-    </div>`
+    `
+    this.shadowRoot.appendChild(style)
   }
 
+  // Executed when we modify the property breed of an instance of this component
+  set breed(passedBreed) {
+    const title = this.shadowRoot.querySelector('h2');
+    const capitalizedBreed = passedBreed.charAt(0).toUpperCase() + passedBreed.slice(1)
+    title.textContent = capitalizedBreed;
+  }
+
+  // Executed when we modify the property img of an instance of this component
+  set img(passedImg) {
+    const img = this.shadowRoot.querySelector('img');
+    img.src = passedImg;
+  }
 }
 
-customElements.define('dog-card', DogCard)
+customElements.define('dog-card', DogCard);

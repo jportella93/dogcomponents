@@ -1,3 +1,6 @@
+// Don't worry too much about this file, it just returns
+// dog data from dog api https://dog.ceo/dog-api/
+
 async function getDogBreeds(number) {
   const data = await fetch('https://dog.ceo/api/breeds/list/all')
   const parsedData = await data.json()
@@ -6,9 +9,9 @@ async function getDogBreeds(number) {
 }
 
 async function getDogPicOfBreed(breed) {
-  const data = await fetch(`https://dog.ceo/api/breed/${breed}/images/random`)
+  const data = await fetch(`https://dog.ceo/api/breed/${breed}/images`)
   const parsedData = await data.json()
-  return parsedData.message
+  return parsedData.message[0]
 }
 
 export async function getDogCollection(number) {

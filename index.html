@@ -1,27 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Dogcomponents</title>
-    <link rel="stylesheet" href="style.css" />
-    <link rel="manifest" href="manifest.json">
-  </head>
-  <body>
-    <app-banner></app-banner>
 
-    <div id="dogsWrapper"></div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>Dogcomponents</title>
+  <!-- import manifest -->
+  <link rel="manifest" href="manifest.json">
+  <!-- import stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
 
-    <template id="app-banner">
-      <h1>Web 🐶ponents demo</h1>
-    </template>
+<body>
 
-    <template id="dog-card">
-      <h2>hello dog-card</h2>
-    </template>
+  <!-- webcomponent -->
+  <app-banner icon="🐶"></app-banner>
 
-    <app-banner position="bottom"></app-banner>
-    <script type="module" src="script.js"></script>
-  </body>
+  <div id="dogsWrapper">
+    <!-- our script renders the dogs here -->
+  </div>
+
+  <!-- webcomponent -->
+  <app-banner icon="🐩" scrollsToTheTop></app-banner>
+
+  <!--
+    template, doesn't render anything, we used to get a default content
+    for dog-card
+  -->
+  <template id="dog-card-content">
+    <div>
+      <h2>Dog breed</h2>
+      <img />
+    </div>
+  </template>
+
+  <!-- import main script -->
+  <script type="module" src="script.js"></script>
+</body>
+
 </html>
