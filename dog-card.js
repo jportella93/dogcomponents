@@ -3,6 +3,7 @@ class DogCard extends HTMLElement {
     super();
     // Attach shadow DOM
     this.attachShadow({mode: 'open'});
+    this._breed = '';
 
     // Get default content from template in our index.html
     const template = document.querySelector('#dog-card-content')
@@ -35,6 +36,12 @@ class DogCard extends HTMLElement {
       }
     `
     this.shadowRoot.appendChild(style)
+
+    const img = this.shadowRoot.querySelector('img');
+    if (img) {
+      img.loading = 'lazy';
+      img.decoding = 'async';
+    }
   }
 
   // Executed when we modify the property breed of an instance of this component
@@ -42,12 +49,17 @@ class DogCard extends HTMLElement {
     const title = this.shadowRoot.querySelector('h2');
     const capitalizedBreed = passedBreed.charAt(0).toUpperCase() + passedBreed.slice(1)
     title.textContent = capitalizedBreed;
+    this._breed = capitalizedBreed;
+
+    const img = this.shadowRoot.querySelector('img');
+    if (img && !img.alt) img.alt = `${this._breed} dog`;
   }
 
   // Executed when we modify the property img of an instance of this component
   set img(passedImg) {
     const img = this.shadowRoot.querySelector('img');
     img.src = passedImg;
+    if (this._breed) img.alt = `${this._breed} dog`;
   }
 }
 
