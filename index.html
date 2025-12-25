@@ -6,8 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
   <title>Dogcomponents</title>
+  <meta name="description" content="A tiny web-components demo that fetches dog breeds and photos." />
+  <meta name="theme-color" content="#f39921" />
   <!-- import manifest -->
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/dog.png" />
   <!-- import stylesheet -->
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -20,6 +23,8 @@
   <div id="dogsWrapper">
     <!-- our script renders the dogs here -->
   </div>
+
+  <div id="status" role="status" aria-live="polite"></div>
 
   <!-- webcomponent -->
   <app-banner icon="🐩" scrollsToTheTop></app-banner>

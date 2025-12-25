@@ -5,17 +5,40 @@ import './dog-card.js';
 import './app-banner.js';
 
 async function registerSW() {
-  if (navigator.serviceWorker) {
+  if ('serviceWorker' in navigator) {
     try {
-      const registration = await navigator.serviceWorker.register('./myCoolServiceWorker.js')
-      console.log('SW registration succesful!', registration)
+      const swUrl = new URL('./myCoolServiceWorker.js', import.meta.url);
+      const registration = await navigator.serviceWorker.register(swUrl, { scope: './' });
+      console.log('SW registration successful!', registration)
     } catch (error) {
-      console.log('SW registraion failed!', error)
+      console.log('SW registration failed!', error)
     }
   }
 }
 
+function setStatus(message, { withRetry = false } = {}) {
+  const status = document.querySelector('#status');
+  if (!status) return;
+  status.innerHTML = '';
+  if (message) {
+    const p = document.createElement('p');
+    p.textContent = message;
+    status.appendChild(p);
+  }
+  if (withRetry) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = 'Retry';
+    button.addEventListener('click', () => window.location.reload());
+    status.appendChild(button);
+  }
+}
+
 function renderDogs(dogCollection) {
+  const dogsWrapper = document.querySelector('#dogsWrapper');
+  if (!dogsWrapper) return;
+  dogsWrapper.innerHTML = '';
+
   Object.values(dogCollection).forEach(dogData => {
     // Create a new instance of dog-card
     const dogCard = document.createElement('dog-card')
@@ -25,7 +48,6 @@ function renderDogs(dogCollection) {
     // This executes set img() method on this dog-card instance
     dogCard.img = dogData.picture;
 
-    const dogsWrapper = document.querySelector('#dogsWrapper');
     dogsWrapper.appendChild(dogCard)
   });
 }
@@ -34,9 +56,15 @@ function renderDogs(dogCollection) {
 window.addEventListener('load', async () => {
   registerSW();
 
-  // Returns dog data from dog api https://dog.ceo/dog-api/
-  const dogCollection = await getDogCollection(30);
-
-  // Creates dog-cards with dog data and appends them to the DOM
-  renderDogs(dogCollection);
+  setStatus('Loading dogs…');
+  try {
+    // Returns dog data from dog api https://dog.ceo/dog-api/
+    const dogCollection = await getDogCollection(30);
+    // Creates dog-cards with dog data and appends them to the DOM
+    renderDogs(dogCollection);
+    setStatus('');
+  } catch (e) {
+    console.error(e);
+    setStatus('Could not load dogs (API error or offline).', { withRetry: true });
+  }
 })
