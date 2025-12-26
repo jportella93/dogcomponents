@@ -1,6 +1,7 @@
-const cacheName = 'dog-v1';
+// IMPORTANT (Safari): never serve cached redirect responses from a Service Worker.
+// Some static hosts redirect `./` (or `/`) -> `/index.html`; caching that 301/302 breaks Safari.
+const cacheName = 'dog-v2';
 const staticAssets = [
-  './',
   './index.html',
   './style.css',
   './script.js',
@@ -9,14 +10,24 @@ const staticAssets = [
   './app-banner.js'
 ];
 
-self.addEventListener('install', async e => {
-  const cache = await caches.open(cacheName);
-  await cache.addAll(staticAssets);
-  return self.skipWaiting();
+self.addEventListener('install', e => {
+  e.waitUntil(
+    (async () => {
+      const cache = await caches.open(cacheName);
+      await precacheStaticAssets(cache, staticAssets);
+      await self.skipWaiting();
+    })()
+  );
 });
 
 self.addEventListener('activate', e => {
-  self.clients.claim();
+  e.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => k !== cacheName).map((k) => caches.delete(k)));
+      await self.clients.claim();
+    })()
+  );
 });
 
 self.addEventListener('fetch', async e => {
@@ -33,17 +44,47 @@ self.addEventListener('fetch', async e => {
 async function returnCachedIfAvailable(req) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(req);
-  return cached || fetch(req);
+  if (cached && !isRedirectResponse(cached)) return cached;
+
+  const fresh = await fetch(req);
+  if (isCacheableSameOriginResponse(fresh)) {
+    await cache.put(req, fresh.clone());
+  }
+  return fresh;
 }
 
 async function fetchAndCache(req) {
   const cache = await caches.open(cacheName);
   try {
     const fresh = await fetch(req);
-    await cache.put(req, fresh.clone());
+    if (fresh && !isRedirectResponse(fresh) && (fresh.ok || fresh.type === 'opaque')) {
+      await cache.put(req, fresh.clone());
+    }
     return fresh;
   } catch (e) {
     const cached = await cache.match(req);
     return cached;
+  }
+}
+
+function isRedirectResponse(res) {
+  return Boolean(res && (res.redirected || res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)));
+}
+
+function isCacheableSameOriginResponse(res) {
+  return Boolean(res && !isRedirectResponse(res) && res.status === 200 && (res.type === 'basic' || res.type === 'cors'));
+}
+
+async function precacheStaticAssets(cache, assets) {
+  for (const asset of assets) {
+    try {
+      const req = new Request(asset, { cache: 'reload' });
+      const res = await fetch(req);
+      if (isCacheableSameOriginResponse(res)) {
+        await cache.put(req, res.clone());
+      }
+    } catch (_) {
+      // Ignore individual precache failures.
+    }
   }
 }

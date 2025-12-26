@@ -1,6 +1,7 @@
-const CACHE_NAME = 'dog-cache-v2';
+// IMPORTANT (Safari): never serve cached redirect responses from a Service Worker.
+// Some static hosts redirect `./` (or `/`) -> `/index.html`; caching that 301/302 breaks Safari.
+const CACHE_NAME = 'dog-cache-v3';
 const STATIC_ASSETS = [
-  './',
   './index.html',
   './style.css',
   './script.js',
@@ -23,7 +24,8 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
-      await cache.addAll(STATIC_ASSETS);
+      // Avoid cache.addAll() because it will happily cache redirects.
+      await precacheStaticAssets(cache, STATIC_ASSETS);
       await self.skipWaiting();
     })()
   );
@@ -67,7 +69,14 @@ async function returnCachedIfAvailable(req) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(req);
   // If there isn't anything cached, do the HTTP request
-  return cached || fetch(req);
+  if (cached && !isRedirectResponse(cached)) return cached;
+
+  const fresh = await fetch(req);
+  // Never cache redirects; only cache successful same-origin responses.
+  if (isCacheableSameOriginResponse(fresh)) {
+    await cache.put(req, fresh.clone());
+  }
+  return fresh;
 }
 
 async function fetchAndCache(req) {
@@ -76,7 +85,7 @@ async function fetchAndCache(req) {
     // Try to get a fresh version of the resource first
     const fresh = await fetch(req);
     // Update the cache with fresh version (opaque is common for <img> fetches)
-    if (fresh && (fresh.ok || fresh.type === 'opaque')) {
+    if (fresh && !isRedirectResponse(fresh) && (fresh.ok || fresh.type === 'opaque')) {
       await cache.put(req, fresh.clone());
     }
     // return fresh version
@@ -91,5 +100,30 @@ async function fetchAndCache(req) {
         headers: { 'Content-Type': 'text/plain; charset=utf-8' }
       })
     );
+  }
+}
+
+function isRedirectResponse(res) {
+  // `res.redirected` is true for followed redirects; `opaqueredirect` is explicit redirect type.
+  return Boolean(res && (res.redirected || res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)));
+}
+
+function isCacheableSameOriginResponse(res) {
+  // Same-origin static assets should be basic/cors with status 200. Never cache redirects.
+  return Boolean(res && !isRedirectResponse(res) && res.status === 200 && (res.type === 'basic' || res.type === 'cors'));
+}
+
+async function precacheStaticAssets(cache, assets) {
+  for (const asset of assets) {
+    try {
+      // cache: 'reload' avoids an already-cached redirect being reused during install.
+      const req = new Request(asset, { cache: 'reload' });
+      const res = await fetch(req);
+      if (isCacheableSameOriginResponse(res)) {
+        await cache.put(req, res.clone());
+      }
+    } catch (_) {
+      // Ignore individual precache failures (app still works online).
+    }
   }
 }
