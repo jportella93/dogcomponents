@@ -34,6 +34,10 @@ self.addEventListener('fetch', async e => {
   const req = e.request;
   const url = new URL(req.url);
 
+  if (req.method !== 'GET') return;
+  // Avoid intercepting navigations (Safari redirect + SW is fragile).
+  if (req.mode === 'navigate') return;
+
   if (url.origin === location.origin) {
     e.respondWith(returnCachedIfAvailable(req));
   } else {
@@ -46,7 +50,7 @@ async function returnCachedIfAvailable(req) {
   const cached = await cache.match(req);
   if (cached && !isRedirectResponse(cached)) return cached;
 
-  const fresh = await fetch(req);
+  const fresh = await fetchAvoidingRedirectResponse(req);
   if (isCacheableSameOriginResponse(fresh)) {
     await cache.put(req, fresh.clone());
   }
@@ -56,7 +60,7 @@ async function returnCachedIfAvailable(req) {
 async function fetchAndCache(req) {
   const cache = await caches.open(cacheName);
   try {
-    const fresh = await fetch(req);
+    const fresh = await fetchAvoidingRedirectResponse(req);
     if (fresh && !isRedirectResponse(fresh) && (fresh.ok || fresh.type === 'opaque')) {
       await cache.put(req, fresh.clone());
     }
@@ -75,11 +79,28 @@ function isCacheableSameOriginResponse(res) {
   return Boolean(res && !isRedirectResponse(res) && res.status === 200 && (res.type === 'basic' || res.type === 'cors'));
 }
 
+async function fetchAvoidingRedirectResponse(req) {
+  const res = await fetch(req);
+  if (!isRedirectResponse(res)) return res;
+
+  if (res.url) {
+    try {
+      const directReq = new Request(res.url, { cache: 'no-store' });
+      const directRes = await fetch(directReq);
+      return directRes;
+    } catch (_) {
+      return res;
+    }
+  }
+
+  return res;
+}
+
 async function precacheStaticAssets(cache, assets) {
   for (const asset of assets) {
     try {
       const req = new Request(asset, { cache: 'reload' });
-      const res = await fetch(req);
+      const res = await fetchAvoidingRedirectResponse(req);
       if (isCacheableSameOriginResponse(res)) {
         await cache.put(req, res.clone());
       }
